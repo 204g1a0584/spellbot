@@ -1,42 +1,65 @@
 import React, { useState } from 'react';
 import './App.css';
- 
+
 function App() {
   const [Text, setText] = useState('');
   const [errors, setErrors] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
- 
+
+  const markBadWords = () => {
+    let words = Text.split(/\s+/); // Split the input text into words
+    const badWordIndices = {};
+
+    // Find the indices of bad words
+    errors.forEach(error => {
+      const badWord = error.bad;
+      const regex = new RegExp(`\\b${badWord}\\b`, 'gi'); // Use regex to match whole words
+      for (let i = 0; i < words.length; i++) {
+        if (words[i].match(regex)) {
+          badWordIndices[i] = true;
+        }
+      }
+    });
+
+    // Mark the bad words
+    let markedWords = words.map((word, index) => (
+      badWordIndices[index] ? <span className="bad-word" key={index}>{word}</span> : word
+    ));
+
+    return markedWords;
+  };
+
   const postData = async () => {
     try {
       setError(null); // Reset any previous errors
       setLoading(true);
- 
+
       // Replace the API URL with your actual endpoint
       const apiUrl = `https://api.textgears.com/grammar?text=${Text}&language=en-GB&whitelist=&dictionary_id=&ai=1&key=uA6hWUQ9eJmzN7L8`;
- 
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(Text),
+        body: JSON.stringify({ text: Text }), // Send the text as an object
       });
- 
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
- 
+
       const result = await response.json();
       console.log('Data posted successfully:', result);
- 
+
       // Check if there are errors in the response
       if (result.response && result.response.errors) {
         const receivedErrors = result.response.errors;
- 
+
         // Log the errors
-        console.log(receivedErrors);
- 
+        console.log('Errors Received are:', receivedErrors);
+
         // Map the received errors to the format you want to display
         const errorSuggestions = receivedErrors.map(error => {
           const badWord = error.bad;
@@ -46,7 +69,7 @@ function App() {
             suggestedReplacements,
           };
         });
- 
+
         setErrors(errorSuggestions);
       }
     } catch (error) {
@@ -56,11 +79,11 @@ function App() {
       setLoading(false);
     }
   };
- 
+
   return (
     <div className="App">
       <h1 className="title">Grammar Checker</h1>
- 
+
       <div className="textarea-container">
         <textarea
           className="textarea"
@@ -68,11 +91,18 @@ function App() {
           onChange={(e) => setText(e.target.value)}
           value={Text}
         />
-        <button className="check-button" onClick={postData}>
-          Check Grammar
-        </button>
       </div>
- 
+      
+      <div className="text-display">
+        <p>
+          {markBadWords()}
+        </p>
+      </div>
+
+      <button className="check-button" onClick={postData}>
+        Check Grammar
+      </button>
+
       {loading && <p className="loading">Checking...</p>}
       {error && <p className="error">{error}</p>}
       {errors.length > 0 && (
@@ -96,5 +126,5 @@ function App() {
     </div>
   );
 }
- 
+
 export default App;

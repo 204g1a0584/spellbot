@@ -26,6 +26,10 @@
   padding: 10px;
 }
 
+.bad-word{
+  color: red;
+}
+
 .check-button {
   font-size: 18px;
   background-color: #0074d9;
